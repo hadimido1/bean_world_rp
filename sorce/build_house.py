@@ -120,6 +120,12 @@ rep("if (moving && act && act !== NAMES.jump) { if (act === NAMES.sit) { if (sit
 rep("const sitting = act === NAMES.sit;", "const sitting = act === NAMES.sit || act === NAMES.sleep;")
 rep("if (act === NAMES.sit && !sitHold && a.time >= a.getClip().duration * .5", "if ((act === NAMES.sit || act === NAMES.sleep) && !sitHold && a.time >= a.getClip().duration * .5")
 
+# ===== حفظ تسجيل الدخول + اسم اللاعب على لافتة البيت =====
+rep("user=k;put(u=>{u.coins??=500", "user=k;try{localStorage.setItem('bw_session',k)}catch(e){}put(u=>{u.coins??=500")
+rep("$('bOut').onclick=()=>veil(()=>{save();user=null;", "$('bOut').onclick=()=>veil(()=>{save();user=null;try{localStorage.removeItem('bw_session')}catch(e){}")
+rep("document.getElementById('startBtn').onclick=()=>{veil(()=>{document.body.className='inauth'});", "document.getElementById('startBtn').onclick=()=>{veil(()=>{if(!autoLogin())document.body.className='inauth'});")
+rep("function save(){if(user)", "function autoLogin(){let k=null;try{k=localStorage.getItem('bw_session')}catch(e){}if(!k)return false;const D=DB.get();if(!D[k])return false;user=k;look=Object.assign({col:COL[0],expr:'happy',acc:[]},U().look||{});goLobby();setTimeout(()=>startAct('wave'),600);return true}\nfunction save(){if(user)")
+
 rep('applyLevel(); rs(); chkOri();\n', glue + 'applyLevel(); rs(); chkOri();\n')
 # تجميع شيدرز الداخل مسبقاً
 rep('stageOn(false); renderer.compile(scene, cam);', 'stageOn(false); renderer.compile(scene, cam); hInt.group.visible = true; renderer.compile(scene, cam); hInt.group.visible = false;')
@@ -131,7 +137,7 @@ rep('cam.lookAt(sx, sy, sz);\n  sun.position.set', 'if (inHouse) hInt.clampCam(c
 rep('const port = innerHeight > innerWidth;', 'if (inHouse) { pitch = Math.max(.12, Math.min(.8, pitch)); dist = Math.max(2.4, Math.min(5.5, dist)); }\n  const port = innerHeight > innerWidth;')
 rep('  fxUpdate(dt);\n  renderer.render(scene, cam);', '  houseTick(dt); fxUpdate(dt);\n  renderer.render(scene, cam);')
 # الخروج للّوبي أثناء وجودك داخل البيت
-rep("function goLobby(){mode='lobby';", "function goLobby(){if(inHouse)setHouse(false,true);mode='lobby';")
+rep("function goLobby(){mode='lobby';", "function goLobby(){if(inHouse)setHouse(false,true);try{hExt.drawSign(U().name)}catch(e){}mode='lobby';")
 
 open(os.path.join(root, 'index.html'), 'w', encoding='utf-8').write(s)
 j = s.rfind('<script>') + 8

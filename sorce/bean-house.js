@@ -94,17 +94,22 @@ const BeanHouse = (function () {
     p.box(2.6, .5, fz + 3.3, .12, 1, .12, '#8b5a2b'); p.box(2.6, 1.1, fz + 3.3, .4, .32, .55, '#e8262b'); p.box(2.78, 1.2, fz + 3.2, .04, .25, .04, '#ffd23f');
     for (let i = 0; i < 7; i++) { const a = i * .9, rx = -3.9 + (i % 4) * .35, rz = fz + 1.2 + (i >> 1) * .5; p.sph(rx, .12, rz, .2, .2, .2, FL[i % 5]); }
     /* لافتة فوق الباب */
-    const cv = document.createElement('canvas'); cv.width = 256; cv.height = 64;
+    const cv = document.createElement('canvas'); cv.width = 640; cv.height = 100;
     const tex = new THREE.CanvasTexture(cv); tex.encoding = THREE.sRGBEncoding; tex.anisotropy = 4;
-    function drawSign() {
-      const g = cv.getContext('2d'); g.clearRect(0, 0, 256, 64);
-      g.fillStyle = '#5b3a1e'; g.beginPath(); g.moveTo(10, 4); g.arcTo(252, 4, 252, 60, 14); g.arcTo(252, 60, 4, 60, 14); g.arcTo(4, 60, 4, 4, 14); g.arcTo(4, 4, 252, 4, 14); g.fill();
-      g.strokeStyle = '#ffc81e'; g.lineWidth = 4; g.stroke();
-      g.fillStyle = '#ffe9b0'; g.font = '900 38px Cairo, system-ui, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('بيتي', 128, 35);
+    let nm = '';                                                   // اسم اللاعب على اللافتة
+    function drawSign(n) {
+      if (typeof n === 'string') nm = n.trim();
+      const W = 640, Hh = 100, g = cv.getContext('2d'); g.clearRect(0, 0, W, Hh);
+      g.fillStyle = '#5b3a1e'; g.beginPath(); g.moveTo(14, 5); g.arcTo(W - 4, 5, W - 4, Hh - 5, 20); g.arcTo(W - 4, Hh - 5, 4, Hh - 5, 20); g.arcTo(4, Hh - 5, 4, 5, 20); g.arcTo(4, 5, W - 4, 5, 20); g.fill();
+      g.strokeStyle = '#ffc81e'; g.lineWidth = 6; g.stroke();
+      const txt = nm ? 'بيت ' + nm : 'بيتي', mw = W - 60; let fs = 62;
+      g.direction = 'rtl'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.font = '900 ' + fs + 'px Cairo, system-ui, sans-serif';
+      const w = g.measureText(txt).width; if (w > mw) { fs = Math.max(20, Math.floor(fs * mw / w)); g.font = '900 ' + fs + 'px Cairo, system-ui, sans-serif'; }
+      g.fillStyle = '#ffe9b0'; g.fillText(txt, W / 2, Hh / 2 + 3);
       tex.needsUpdate = true;
     }
     drawSign();
-    const sign = new THREE.Mesh(new THREE.PlaneGeometry(1.5, .38), new THREE.MeshBasicMaterial({ map: tex }));
+    const sign = new THREE.Mesh(new THREE.PlaneGeometry(2.4, .38), new THREE.MeshBasicMaterial({ map: tex }));
     sign.position.set(HX, 2.78, HZ - (fz + .15)); sign.rotation.y = Math.PI;
 
     fixZ(p.list.concat(gl.list), geos(THREE).box);
