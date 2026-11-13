@@ -657,17 +657,22 @@ const BeanHouse = (function () {
     p.box(2.6, .5, fz + 3.3, .12, 1, .12, '#8b5a2b'); p.box(2.6, 1.1, fz + 3.3, .4, .32, .55, '#e8262b'); p.box(2.78, 1.2, fz + 3.2, .04, .25, .04, '#ffd23f');
     for (let i = 0; i < 7; i++) { const a = i * .9, rx = -3.9 + (i % 4) * .35, rz = fz + 1.2 + (i >> 1) * .5; p.sph(rx, .12, rz, .2, .2, .2, FL[i % 5]); }
     /* لافتة فوق الباب */
-    const cv = document.createElement('canvas'); cv.width = 256; cv.height = 64;
+    const cv = document.createElement('canvas'); cv.width = 640; cv.height = 100;
     const tex = new THREE.CanvasTexture(cv); tex.encoding = THREE.sRGBEncoding; tex.anisotropy = 4;
-    function drawSign() {
-      const g = cv.getContext('2d'); g.clearRect(0, 0, 256, 64);
-      g.fillStyle = '#5b3a1e'; g.beginPath(); g.moveTo(10, 4); g.arcTo(252, 4, 252, 60, 14); g.arcTo(252, 60, 4, 60, 14); g.arcTo(4, 60, 4, 4, 14); g.arcTo(4, 4, 252, 4, 14); g.fill();
-      g.strokeStyle = '#ffc81e'; g.lineWidth = 4; g.stroke();
-      g.fillStyle = '#ffe9b0'; g.font = '900 38px Cairo, system-ui, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('بيتي', 128, 35);
+    let nm = '';                                                   // اسم اللاعب على اللافتة
+    function drawSign(n) {
+      if (typeof n === 'string') nm = n.trim();
+      const W = 640, Hh = 100, g = cv.getContext('2d'); g.clearRect(0, 0, W, Hh);
+      g.fillStyle = '#5b3a1e'; g.beginPath(); g.moveTo(14, 5); g.arcTo(W - 4, 5, W - 4, Hh - 5, 20); g.arcTo(W - 4, Hh - 5, 4, Hh - 5, 20); g.arcTo(4, Hh - 5, 4, 5, 20); g.arcTo(4, 5, W - 4, 5, 20); g.fill();
+      g.strokeStyle = '#ffc81e'; g.lineWidth = 6; g.stroke();
+      const txt = nm ? 'بيت ' + nm : 'بيتي', mw = W - 60; let fs = 62;
+      g.direction = 'rtl'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.font = '900 ' + fs + 'px Cairo, system-ui, sans-serif';
+      const w = g.measureText(txt).width; if (w > mw) { fs = Math.max(20, Math.floor(fs * mw / w)); g.font = '900 ' + fs + 'px Cairo, system-ui, sans-serif'; }
+      g.fillStyle = '#ffe9b0'; g.fillText(txt, W / 2, Hh / 2 + 3);
       tex.needsUpdate = true;
     }
     drawSign();
-    const sign = new THREE.Mesh(new THREE.PlaneGeometry(1.5, .38), new THREE.MeshBasicMaterial({ map: tex }));
+    const sign = new THREE.Mesh(new THREE.PlaneGeometry(2.4, .38), new THREE.MeshBasicMaterial({ map: tex }));
     sign.position.set(HX, 2.78, HZ - (fz + .15)); sign.rotation.y = Math.PI;
 
     fixZ(p.list.concat(gl.list), geos(THREE).box);
@@ -989,7 +994,7 @@ const player = new THREE.Group(); mesh.scale.setScalar(.75); mesh.castShadow = t
 const face = BeanFace.attach(THREE, mesh.material, QLV[QL].face); let col = COL[0]; face.set(col, 'happy');
 BeanFace.loadAtlas(ATLAS);
 
-document.getElementById('startBtn').onclick=()=>{veil(()=>{document.body.className='inauth'});try{wfs()}catch(e){}try{screen.orientation.lock('landscape').catch(()=>{})}catch(e){}};
+document.getElementById('startBtn').onclick=()=>{veil(()=>{if(!autoLogin())document.body.className='inauth'});try{wfs()}catch(e){}try{screen.orientation.lock('landscape').catch(()=>{})}catch(e){}};
 addEventListener('error',e=>{const t=document.getElementById('toast');if(t){t.textContent='خطأ: '+e.message;t.style.display='block'}});
 
 const sk=mesh.skeleton.bones,acc=BeanAcc.create(THREE,sk.find(b=>b.name==='Head'),sk.find(b=>b.name==='Chest'));
@@ -1044,11 +1049,12 @@ $('shb').onclick=e=>{const t=e.target.closest('[data-s],[data-c],[data-e],[data-
  else if(d.d){put(u=>{u.coins+=150;u.daily=Date.now()});toast('تم استلام 150 عملة')}
  else if(d.b){const it=ITEMS.find(i=>i.k===d.b);if(U().coins<it.p)return toast('رصيدك غير كافٍ');put(u=>{u.coins-=it.p;u.owned.push(it.k)});toast('تمت عملية الشراء')}
  applyLook();save();refresh();$('shb').classList.toggle('still',!d.s);render()};
+function autoLogin(){let k=null;try{k=localStorage.getItem('bw_session')}catch(e){}if(!k)return false;const D=DB.get();if(!D[k])return false;user=k;look=Object.assign({col:COL[0],expr:'happy',acc:[]},U().look||{});goLobby();setTimeout(()=>startAct('wave'),600);return true}
 function save(){if(user)put(u=>{u.look=look})}
 document.querySelectorAll('#nav button').forEach(b=>b.onclick=()=>openTab(tab===b.dataset.t&&b.dataset.t!=='home'?'home':b.dataset.t));
 $('bProf').onclick=()=>openTab('user');$('sx').onclick=()=>openTab('home');
-function goLobby(){if(inHouse)setHouse(false,true);mode='lobby';document.body.className='inlobby';stageOn(true);player.position.set(500,.25,500);face_=Math.PI;yaw=Math.PI;applyLook();tag(U().name);refresh();openTab('home')}
-$('bOut').onclick=()=>veil(()=>{save();user=null;mode='auth';document.body.className='inauth';look={col:COL[0],expr:'happy',acc:[]};applyLook();tag('');sheetOn=false;authMode(false)});
+function goLobby(){if(inHouse)setHouse(false,true);try{hExt.drawSign(U().name)}catch(e){}mode='lobby';document.body.className='inlobby';stageOn(true);player.position.set(500,.25,500);face_=Math.PI;yaw=Math.PI;applyLook();tag(U().name);refresh();openTab('home')}
+$('bOut').onclick=()=>veil(()=>{save();user=null;try{localStorage.removeItem('bw_session')}catch(e){}mode='auth';document.body.className='inauth';look={col:COL[0],expr:'happy',acc:[]};applyLook();tag('');sheetOn=false;authMode(false)});
 $('play').onclick=()=>veil(()=>{save();mode='world';document.body.className='inworld';stageOn(false);player.position.set(0,0,0);face_=0;yaw=Math.PI;pitch=.38;dist=7.5;wfs();chkOri()});
 $('menuBtn').onclick=()=>veil(()=>goLobby());$('menuBtn').setAttribute('aria-label','اللوبي');
 setInterval(()=>{if(mode==='world'&&user)put(u=>{u.secs+=10;u.coins+=3})},10000);
@@ -1061,7 +1067,7 @@ $('go').onclick=async()=>{const n=$('un').value.trim(),p=$('pw').value,k=n.toLow
  if(isReg){if(D[k])return msg.textContent='هذا الاسم مستخدم، اختر اسماً آخر';if(p!==$('pw2').value)return msg.textContent='كلمتا السر غير متطابقتين';
   const salt=Math.random().toString(36).slice(2);D[k]={name:n,salt,hash:await H(salt+p)};DB.set(D)}
  else{const u=D[k];if(!u||u.hash!==await H(u.salt+p))return msg.textContent='اسم المستخدم أو كلمة السر غير صحيحة'}
- user=k;put(u=>{u.coins??=500;u.secs??=0;u.created??=Date.now();u.owned??=ITEMS.filter(i=>!i.p).map(i=>i.k);u.look??={col:COL[0],expr:'happy',acc:[]}});
+ user=k;try{localStorage.setItem('bw_session',k)}catch(e){}put(u=>{u.coins??=500;u.secs??=0;u.created??=Date.now();u.owned??=ITEMS.filter(i=>!i.p).map(i=>i.k);u.look??={col:COL[0],expr:'happy',acc:[]}});
  look=Object.assign({col:COL[0],expr:'happy',acc:[]},U().look);$('pw').value=$('pw2').value='';msg.textContent='';wfs();veil(()=>{goLobby();setTimeout(()=>startAct('wave'),600)})};
 /* تدوير الشخصية بالسحب */
 let lx=null;cv.addEventListener('pointerdown',e=>{lx=e.clientX});addEventListener('pointerup',()=>{lx=null});
