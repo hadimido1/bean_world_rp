@@ -17,6 +17,7 @@ canvas{display:block;width:100%;height:100%;touch-action:none;cursor:grab}
 
 :root{--m:12px;--sl:env(safe-area-inset-left,0px);--sr:env(safe-area-inset-right,0px);--sT:env(safe-area-inset-top,0px);--sb:env(safe-area-inset-bottom,0px);--glass:rgba(12,17,42,.8);--line:rgba(255,255,255,.16);--acc:#ffd23f;--pk:#ff1080;--h:44px}
 #rot[hidden]{display:none}button{font-family:inherit}svg{display:block;flex:none}
+#onl{display:none;top:calc(54px + env(safe-area-inset-top,0px));left:calc(16px + env(safe-area-inset-left,0px));font-weight:700;font-size:12px;padding:5px 11px;pointer-events:none}body.inworld #onl.on{display:block}
 .scr{display:none}body.inauth #auth{display:grid}body.inlobby #lobby{display:block}body.insplash #splash{display:grid}
 body:not(.inworld) #hud,body:not(.inworld) #hint,body:not(.inworld) #joy,body:not(.inworld) #acts,body:not(.inworld) #menuBtn{display:none}
 #fs{width:38px;height:34px}
@@ -200,7 +201,7 @@ body.inworld #enterBtn.on{display:flex}
 </style>
 </head><body>
 <canvas id="v"></canvas><div id="aur"></div><div id="vig"></div><div id="veil" class="on"><i></i></div>
-<div id="hud" class="chip"><small>الحركة</small><span id="st">Idle</span></div>
+<div id="hud" class="chip"><small>الحركة</small><span id="st">Idle</span></div><div id="onl" class="chip"></div>
 <div id="hint" class="chip" dir="rtl">WASD للمشي · Shift للجري · Space للقفز · اسحب المشهد لتدوير الكاميرا</div>
 <div id="joy" aria-label="جويستك الحركة"><div id="jbase"><div id="knob"></div></div></div>
 <div id="acts" dir="ltr"><div id="emos"><button class="cb" data-k="wave" aria-label="تلويح"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 11V6a2 2 0 0 0-4 0v1M14 10V4a2 2 0 0 0-4 0v2M10 10.5V6a2 2 0 0 0-4 0v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/></svg></button><button class="cb" data-k="sit" aria-label="جلوس"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3v10h10M7 13v8M17 13v8M7 8h6"/></svg></button><button class="cb" data-k="d1" aria-label="ديسكو"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="13" r="7.5"/><path d="M12 2v3.5M4.5 13h15M12 5.5c-3.2 3.4-3.2 11.6 0 15M12 5.5c3.2 3.4 3.2 11.6 0 15"/></svg></button><button class="cb" data-k="d2" aria-label="حفلة"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg></button></div><button class="cb" id="bEmo" aria-label="الحركات" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 14.2c1 1.4 2.4 2.1 4 2.1s3-.7 4-2.1"/><path d="M9 9.5h.01M15 9.5h.01" stroke-width="3"/></svg></button><button class="cb" id="bRun" aria-label="جري" aria-pressed="false"><svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2L4.5 13.5H11L10 22l8.5-11.5H12z"/></svg></button><button class="cb" id="bJump" data-k="jump" aria-label="قفز"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20V5M5 11l7-7 7 7"/></svg></button></div>
@@ -218,6 +219,13 @@ body.inworld #enterBtn.on{display:flex}
 <button id="play"></button></div>
 <button id="enterBtn" aria-label="دخول"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4a1 1 0 011-1h9l4 2v16M3 21h18M12 12v.01"/></svg><span id="enterTx">دخول البيت</span></button><div id="err" hidden>تعذّر تحميل three.js — تأكد من الاتصال بالإنترنت ثم أعد فتح الصفحة</div>
 <div id="rot"><div><p id="rotmsg">للعب، يجب تشغيل ملء الشاشة</p><button id="rotgo">ملء الشاشة</button></div></div>
+<script>
+/* ===== إعدادات الأونلاين =====
+   url و key: من مشروع Supabase (Project Settings ← API Keys): رابط المشروع + المفتاح العام (publishable / anon).
+   اتركهما فارغين = وضع تجريبي (تبويبات نفس المتصفح فقط).
+   room: اسم الغرفة. تقدر تغيّره من الرابط: ?room=اسم  (اللي يفتحون نفس الاسم يلتقون) */
+window.BW_ONLINE={url:"",key:"",room:"bean-world"};
+</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
 /* bean-face.js — وجه البين (عيون + فم) ولون الجسم يُرسمان بالكود على canvas. بدون صور. */
@@ -1055,7 +1063,7 @@ document.querySelectorAll('#nav button').forEach(b=>b.onclick=()=>openTab(tab===
 $('bProf').onclick=()=>openTab('user');$('sx').onclick=()=>openTab('home');
 function goLobby(){if(inHouse)setHouse(false,true);try{hExt.drawSign(U().name)}catch(e){}mode='lobby';document.body.className='inlobby';stageOn(true);player.position.set(500,.25,500);face_=Math.PI;yaw=Math.PI;applyLook();tag(U().name);refresh();openTab('home')}
 $('bOut').onclick=()=>veil(()=>{save();user=null;try{localStorage.removeItem('bw_session')}catch(e){}mode='auth';document.body.className='inauth';look={col:COL[0],expr:'happy',acc:[]};applyLook();tag('');sheetOn=false;authMode(false)});
-$('play').onclick=()=>veil(()=>{save();mode='world';document.body.className='inworld';stageOn(false);player.position.set(0,0,0);face_=0;yaw=Math.PI;pitch=.38;dist=7.5;wfs();chkOri()});
+$('play').onclick=()=>veil(()=>{save();mode='world';document.body.className='inworld';stageOn(false);player.position.set((Math.random()-.5)*3,0,(Math.random()-.5)*3);face_=0;yaw=Math.PI;pitch=.38;dist=7.5;wfs();chkOri()});
 $('menuBtn').onclick=()=>veil(()=>goLobby());$('menuBtn').setAttribute('aria-label','اللوبي');
 setInterval(()=>{if(mode==='world'&&user)put(u=>{u.secs+=10;u.coins+=3})},10000);
 const msg=$('msg');
@@ -1355,7 +1363,7 @@ function frame() {
   if (now - lastFrameT < capI() - 2) { requestAnimationFrame(frame); return; }                       // سقف معدل الإطارات
   perfTick(now - lastFrameT); if (DBG) dbgTick(now - lastFrameT); lastFrameT = now;
   const dt = Math.min(clock.getDelta(), .05);
-  if (mode !== lastMode) { lastMode = mode; pfGrace = performance.now() + 2500; snap = true; if (mode === 'world') { intro = 1; dist = 12.5; pitch = .62; entering = true; pos.y = 4.5; vy = 0; grounded = true; } }
+  if (mode !== lastMode) { lastMode = mode; Online.mode(mode); pfGrace = performance.now() + 2500; snap = true; if (mode === 'world') { intro = 1; dist = 12.5; pitch = .62; entering = true; pos.y = 4.5; vy = 0; grounded = true; } }
   if (mode === 'world') {
     if (entering) { pos.y *= Math.exp(-dt * 2.4); if (pos.y < .03) { pos.y = 0; entering = false; emit(pos.x, 0, pos.z, 12, 1.4, .5); } }
     else if (!grounded) { vy -= GRAV * dt; pos.y += vy * dt; if (pos.y <= 0) { pos.y = 0; vy = 0; grounded = true; emit(pos.x, 0, pos.z, 14, 2.1, .7); } }
@@ -1400,7 +1408,7 @@ function frame() {
   else { const kf = 1 - Math.exp(-dt * 16), kr = 1 - Math.exp(-dt * 9), kd = 1 - Math.exp(-dt * 6); sx += (tx - sx) * kf; sz += (tz - sz) * kf; sy += (ty - sy) * kd; syaw += Math.atan2(Math.sin(yaw - syaw), Math.cos(yaw - syaw)) * kr; spitch += (pitch - spitch) * kr; sdist += (dist - sdist) * kd; }
   cam.position.set(sx + Math.sin(syaw) * Math.cos(spitch) * sdist, sy + Math.sin(spitch) * sdist, sz + Math.cos(syaw) * Math.cos(spitch) * sdist); if (inHouse) hInt.clampCam(cam.position, sx, sy, sz); cam.lookAt(sx, sy, sz);
   sun.position.set(tx + 10, 18, tz + 6); sun.target.position.set(tx, 0, tz); sun.target.updateMatrixWorld();
-  houseTick(dt); fxUpdate(dt);
+  houseTick(dt); fxUpdate(dt); Online.tick(dt);
   renderer.render(scene, cam); requestAnimationFrame(frame);
 }
 function rs() { const w = innerWidth, h = innerHeight; curDpr = -1; setDpr(); cam.aspect = w / h; cam.updateProjectionMatrix(); }
@@ -1496,6 +1504,227 @@ function houseTick(dt) {
   if (inHouse) { seatTick(dt || .016); hInt.updateWalls(cam.position.x, cam.position.z); }
 }
 if (document.fonts && document.fonts.load) document.fonts.load('900 38px Cairo').then(() => hExt.drawSign()).catch(() => {});
+/* ===================== أونلاين: لاعبون آخرون في نفس العالم =====================
+   - النقل: Supabase Realtime (Broadcast فقط، بدون جداول ولا سيرفر خاص) عند ضبط BW_ONLINE.url/key.
+     بدون ضبط: وضع تجريبي عبر BroadcastChannel (تبويبات نفس المتصفح فقط) لاختبار سريع.
+   - كل لاعب يرسل حالته (موقع/اتجاه/حركة/شكل) ~10 مرات بالثانية فقط أثناء الحركة، ونبضة كل ثانيتين وهو ساكن.
+   - كل لاعب آخر يُرسم بنسخة كاملة من البين (جسم + وجه + إكسسوارات + أنميشن) مع اسمه فوق رأسه.
+   - يعتمد على متغيرات اللعبة العامة: mode, look, act, speed, face_, pos, inHouse, NAMES, keyOf ... */
+const Online = (() => {
+  const CFG = Object.assign({ url: '', key: '', room: 'bean-world' }, window.BW_ONLINE || {});
+  let qr = null; try { qr = new URLSearchParams(location.search).get('room'); } catch (e) {}
+  const ROOM = String(qr || CFG.room || 'bean-world').replace(/[^\w-]/g, '').slice(0, 40) || 'bean-world';
+  const REAL = !!(CFG.url && CFG.key);
+  const SB_JS = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.109.0/dist/umd/supabase.js';
+  const MAX = 12, TIMEOUT = 7000, SEND_DT = .1, BEAT = 2;
+  const sid = Math.random().toString(36).slice(2, 10);
+  const chip = $('onl'), remotes = new Map(), pool = [], validAcc = new Set(acc.list.map(a => a.id));
+  const num = (v, d) => Number.isFinite(v) ? v : (d || 0), pos2 = v => Math.max(-3000, Math.min(3000, num(v)));
+  const r2 = v => Math.round(v * 100) / 100, r1 = v => Math.round(v * 10) / 10;
+  let tp = null, on = false, up = false, everUp = false, chk = 0, beat = 0, lastSig = '';
+
+  /* ───────── الحالة في الشريط الصغير ───────── */
+  function setChip(s) {
+    if (!chip) return;
+    if (!s) { chip.classList.remove('on'); return; }
+    chip.textContent = s; chip.classList.add('on');
+  }
+  function status() {
+    if (!on) return setChip('');
+    if (!up) return setChip(everUp ? 'انقطع الاتصال… يعيد المحاولة' : (tp && tp.failed ? 'تعذر الاتصال' : 'يتصل…'));
+    const n = remotes.size;
+    if (tp && tp.kind === 'local') return setChip('تجريبي (نفس المتصفح) · ' + (n ? n + ' معك' : 'بمفردك'));
+    setChip(!n ? 'أونلاين · بمفردك' : n === 1 ? 'أونلاين · لاعب معك' : n === 2 ? 'أونلاين · لاعبان معك' : n <= 10 ? 'أونلاين · ' + n + ' لاعبين معك' : 'أونلاين · ' + n + ' لاعباً معك');
+  }
+
+  /* ───────── النقل ───────── */
+  function loadScript() {
+    return new Promise((res, rej) => {
+      if (window.supabase && window.supabase.createClient) return res();
+      const s = document.createElement('script'); s.src = SB_JS; s.onload = () => res(); s.onerror = () => rej(new Error('supabase-js load failed'));
+      document.head.appendChild(s);
+    });
+  }
+  function mkTransport(onMsg, onUp) {
+    let closed = false, ready = false;
+    const set = (v, why) => { if (closed) return; if (ready !== v || !v) { ready = v; onUp(v, why); } };
+    if (REAL) {
+      let sb = null, ch = null;
+      return {
+        kind: 'net',
+        async open() {
+          await loadScript();
+          if (closed) return;
+          sb = window.supabase.createClient(CFG.url, CFG.key, { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }, realtime: { params: { eventsPerSecond: 20 } } });
+          ch = sb.channel('bw-' + ROOM, { config: { broadcast: { self: false, ack: false } } });
+          ch.on('broadcast', { event: 'm' }, e => { if (!closed && e && e.payload) onMsg(e.payload); });
+          ch.subscribe(s => { if (s === 'SUBSCRIBED') set(true); else if (s === 'CHANNEL_ERROR' || s === 'TIMED_OUT' || s === 'CLOSED') set(false, s); });
+        },
+        send(p) { if (ready && ch) { try { ch.send({ type: 'broadcast', event: 'm', payload: p }); } catch (e) {} } },
+        close() { closed = true; ready = false; try { if (sb && ch) sb.removeChannel(ch); } catch (e) {} }
+      };
+    }
+    if (typeof BroadcastChannel === 'undefined') return null;
+    let bc = null;
+    return {
+      kind: 'local',
+      async open() { bc = new BroadcastChannel('bw-' + ROOM); bc.onmessage = e => { if (!closed && e.data) onMsg(e.data); }; set(true); },
+      send(p) { if (ready && bc) { try { bc.postMessage(p); } catch (e) {} } },
+      close() { closed = true; ready = false; try { if (bc) bc.close(); } catch (e) {} }
+    };
+  }
+
+  /* ───────── نسخة بين للاعب آخر (تُعاد تدويرها عند الخروج لتفادي التسريب) ───────── */
+  function mkRig() {
+    const L = loadGLB(Uint8Array.from(atob(GLB), c => c.charCodeAt(0)).buffer), rm = L.mesh, cl = L.clips.concat(BeanDance.make(THREE));
+    cl.forEach(c => { c.tracks = c.tracks.filter(t => !t.name.startsWith('Head.')); });
+    const g = new THREE.Group(); rm.scale.setScalar(.75); rm.castShadow = true; g.add(rm);
+    const fc = BeanFace.attach(THREE, rm.material, 256), bn = rm.skeleton.bones;
+    const ac = BeanAcc.create(THREE, bn.find(b => b.name === 'Head'), bn.find(b => b.name === 'Chest'));
+    const mx = new THREE.AnimationMixer(rm), acts = {}, W = {}, TW = {};
+    cl.forEach(c => { const a = mx.clipAction(c); acts[c.name] = a; W[c.name] = 0; TW[c.name] = 0; a.setEffectiveWeight(0); a.play(); });
+    const cv = document.createElement('canvas'); cv.width = 512; cv.height = 128;
+    const tx = new THREE.CanvasTexture(cv); tx.encoding = THREE.sRGBEncoding;
+    const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tx, transparent: true })); sp.scale.set(1.8, .45, 1); sp.position.y = 2.35; g.add(sp);
+    const bl = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 1.5), blob.material.clone()); bl.rotation.x = -Math.PI / 2; bl.renderOrder = 1; bl.visible = false;
+    const R = { g, rm, fc, ac, mx, acts, W, TW, cv, tx, bl, id: '', name: '', lookSig: '', act: null, tail: null, hold: false, key: '', sp: 0, tsp: 0, seen: false, t: 0, tx_: 0, ty: 0, tz: 0, tr: 0, h: 0 };
+    mx.addEventListener('finished', e => {
+      if (R.act && R.acts[R.act] === e.action) { R.act = null; R.hold = false; }
+      if (R.tail && R.acts[R.tail] === e.action) R.tail = null;
+    });
+    return R;
+  }
+  function drawTag(R) {
+    const c = R.cv.getContext('2d'); c.clearRect(0, 0, 512, 128);
+    if (R.name) {
+      c.fillStyle = 'rgba(20,35,63,.78)'; c.beginPath(); c.rect(8, 24, 496, 80); c.fill();
+      c.fillStyle = '#fff'; c.font = '700 46px Cairo,system-ui,sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(R.name, 256, 66);
+    }
+    R.tx.needsUpdate = true;
+  }
+  function spawn(id) {
+    const R = pool.pop() || mkRig();
+    R.id = id; R.name = ''; R.lookSig = ''; R.act = null; R.tail = null; R.hold = false; R.key = ''; R.sp = R.tsp = 0; R.seen = false; R.t = performance.now(); R.h = 0;
+    for (const n in R.acts) { const a = R.acts[n]; R.W[n] = 0; R.TW[n] = 0; a.paused = false; a.reset(); a.setEffectiveTimeScale(1); a.setEffectiveWeight(0); a.play(); }
+    R.g.visible = false; R.bl.visible = false; drawTag(R);
+    scene.add(R.g, R.bl);
+    return R;
+  }
+  function drop(id) {
+    const R = remotes.get(id); if (!R) return;
+    remotes.delete(id); scene.remove(R.g, R.bl); R.g.visible = false; pool.push(R);
+    if (R.name && mode === 'world') toast(R.name + ' خرج من العالم');
+    status();
+  }
+
+  /* ───────── استقبال حالة لاعب ───────── */
+  function setLook(R, l) {
+    if (!l || typeof l !== 'object') return;
+    const col = typeof l.c === 'string' && /^#[0-9a-fA-F]{6}$/.test(l.c) ? l.c : COL[0];
+    const ex = BeanFace.expressions.includes(l.e) ? l.e : 'happy';
+    const ids = (Array.isArray(l.a) ? l.a : []).filter(x => validAcc.has(x)).slice(0, 8);
+    const sig = col + '|' + ex + '|' + ids.join(',');
+    if (sig === R.lookSig) return;
+    R.lookSig = sig; R.fc.set(col, ex); R.ac.setColor(col); R.ac.clear(); ids.forEach(id => R.ac.toggle(id));
+  }
+  function setAct(R, key) {
+    const n = NAMES[key] || null, prev = R.act;
+    if ((prev === NAMES.sit || prev === NAMES.sleep) && R.hold) {                     // قيام من الجلوس/النوم: نكمل بقية الأنميشن
+      const a = R.acts[prev]; a.paused = false; a.setEffectiveTimeScale(1); a.time = a.getClip().duration * .86; R.hold = false; R.tail = prev;
+    }
+    R.act = n; if (!n) return;
+    if (R.tail === n) R.tail = null;
+    const a = R.acts[n]; a.reset(); R.hold = false;
+    if (key === 'jump') a.setLoop(THREE.LoopOnce, 1); else if (key === 'wave') a.setLoop(THREE.LoopRepeat, 3); else if (key === 'sit' || key === 'sleep') a.setLoop(THREE.LoopOnce, 1); else a.setLoop(THREE.LoopRepeat, Infinity);
+    a.clampWhenFinished = false; a.setEffectiveTimeScale(key === 'jump' ? .8 : 1); a.play();
+    if (key === 'jump') a.time = a.getClip().duration * .30;
+  }
+  function onMsg(m) {
+    if (!on || !m || typeof m !== 'object' || typeof m.i !== 'string' || m.i === sid) return;
+    if (m.t === 'b') { drop(m.i); return; }
+    if (m.t === 'j') { beat = BEAT; chk = SEND_DT; return; }                     // لاعب جديد دخل ← نرسل حالتنا فوراً
+    if (m.t !== 's' || !Array.isArray(m.p)) return;
+    let R = remotes.get(m.i);
+    if (!R) { if (remotes.size >= MAX) return; R = spawn(m.i); remotes.set(m.i, R); status(); }
+    R.t = performance.now();
+    R.tx_ = pos2(m.p[0]); R.ty = Math.max(-1, Math.min(20, num(m.p[1]))); R.tz = pos2(m.p[2]); R.tr = num(m.r); R.tsp = Math.max(0, Math.min(8, num(m.v))); R.h = m.h ? 1 : 0;
+    if (!R.seen) {
+      R.seen = true; R.g.position.set(R.tx_, R.ty, R.tz); R.g.rotation.y = R.tr;
+      const nm = typeof m.n === 'string' ? m.n.slice(0, 16) : '';
+      if (nm && mode === 'world') toast(nm + ' دخل العالم');
+    }
+    if (typeof m.n === 'string') { const nm = m.n.slice(0, 16); if (nm !== R.name) { R.name = nm; drawTag(R); } }
+    setLook(R, m.l);
+    const k = typeof m.k === 'string' ? m.k : '';
+    if (k !== R.key) { R.key = k; setAct(R, k); }
+  }
+
+  /* ───────── إرسال حالتنا ───────── */
+  function snap() {
+    let nm = 'bean'; try { nm = U().name; } catch (e) {}
+    return { t: 's', i: sid, n: nm, l: { c: look.col, e: look.expr, a: look.acc.slice() }, p: [r2(pos.x), r2(pos.y), r2(pos.z)], r: r2(face_), k: act ? keyOf(act) || '' : '', v: r1(speed), h: inHouse ? 1 : 0 };
+  }
+
+  /* ───────── تحديث اللاعبين الآخرين كل إطار ───────── */
+  function tickRemote(R, dt, now) {
+    const g = R.g, p = g.position, stale = now - R.t;
+    const k = 1 - Math.exp(-dt * 12), dx = R.tx_ - p.x, dz = R.tz - p.z;
+    if (dx * dx + dz * dz > 64) p.set(R.tx_, R.ty, R.tz); else { p.x += dx * k; p.z += dz * k; p.y += (R.ty - p.y) * Math.min(1, dt * 16); }
+    let d = R.tr - g.rotation.y; d = Math.atan2(Math.sin(d), Math.cos(d)); g.rotation.y += d * Math.min(1, dt * 12);
+    R.sp += ((stale > 600 ? 0 : R.tsp) - R.sp) * Math.min(1, dt * 9);
+    const sp = R.sp, runW = cl01((sp - WALK_V * .9) / (RUN_V * .55 - WALK_V * .9)), walkW = cl01(sp / 1.1) * (1 - runW), idleW = Math.max(0, 1 - cl01(sp / 1.1));
+    for (const n in R.TW) R.TW[n] = 0;
+    const cur = R.act || R.tail;
+    if (cur) R.TW[cur] = 1; else { R.TW.Idle = idleW; R.TW.Walk = walkW; R.TW.Run = runW; }
+    if (R.act && (R.act === NAMES.sit || R.act === NAMES.sleep) && !R.hold) { const a = R.acts[R.act]; if (a.time >= a.getClip().duration * .5 && a.time < a.getClip().duration * .6) { R.hold = true; a.paused = true; } }
+    for (const n in R.W) { const kk = Math.min(1, dt * (cur && n === cur ? 14 : 10)); R.W[n] += (R.TW[n] - R.W[n]) * kk; R.acts[n].setEffectiveWeight(R.W[n] < .002 ? 0 : R.W[n]); }
+    R.acts.Walk.setEffectiveTimeScale(Math.max(.6, Math.min(1.5, sp / 2.2)));
+    R.acts.Run.setEffectiveTimeScale(Math.max(.8, Math.min(1.25, sp / 5.4)));
+    R.ac.update(dt); R.mx.update(dt);
+    const vis = mode === 'world' && R.seen && R.h === (inHouse ? 1 : 0);          // من في البيت لا يُرى من الخارج والعكس
+    g.visible = vis;
+    const bv = vis && !renderer.shadowMap.enabled; R.bl.visible = bv;
+    if (bv) { const s = 1 - Math.min(p.y * .1, .5); R.bl.position.set(p.x, .03, p.z); R.bl.scale.set(s, s, s); R.bl.material.opacity = s; }
+  }
+  function tick(dt) {
+    if (!on) return;
+    const now = performance.now();
+    if (up && mode === 'world') {
+      chk += dt; beat += dt;
+      if (chk >= SEND_DT) {
+        chk = 0; const m = snap(), sig = m.p.join() + '|' + m.r + '|' + m.k + '|' + m.v + '|' + m.h;
+        if (sig !== lastSig || beat >= BEAT) { tp.send(m); lastSig = sig; beat = 0; }
+      }
+    }
+    let gone = null;
+    remotes.forEach(R => { if (now - R.t > TIMEOUT) (gone || (gone = [])).push(R.id); else tickRemote(R, dt, now); });
+    if (gone) gone.forEach(drop);
+  }
+
+  /* ───────── بدء/إيقاف (يُستدعى عند دخول/خروج العالم) ───────── */
+  async function start() {
+    if (on) return;
+    on = true; up = false; everUp = false; chk = beat = 0; lastSig = '';
+    const t = tp = mkTransport(onMsg, (v) => {
+      if (tp !== t) return; up = v; if (v) { everUp = true; t.send({ t: 'j', i: sid }); beat = BEAT; chk = SEND_DT; } status();
+    });
+    if (!t) { on = false; return; }
+    status();
+    try { await t.open(); } catch (e) { if (tp === t) { t.failed = true; status(); } }
+  }
+  function stop() {
+    if (!on) return;
+    const t = tp; on = false; up = false; tp = null;
+    if (t) { try { t.send({ t: 'b', i: sid }); } catch (e) {} setTimeout(() => { try { t.close(); } catch (e) {} }, 200); }
+    [...remotes.keys()].forEach(id => { const R = remotes.get(id); remotes.delete(id); scene.remove(R.g, R.bl); R.g.visible = false; pool.push(R); });
+    setChip('');
+  }
+  addEventListener('pagehide', () => { try { if (on && up && tp) tp.send({ t: 'b', i: sid }); } catch (e) {} });
+  let errd = false;
+  const safe = f => (...a) => { try { return f(...a); } catch (e) { if (!errd) { errd = true; console.error('[online]', e); } } };
+  return { mode: safe(m => { if (m === 'world') start(); else stop(); }), tick: safe(tick), _sid: sid, _remotes: remotes };
+})();
+
 applyLevel(); rs(); chkOri();
 /* تجميع كل الشيدرز مسبقاً (لوبي + عالم + كل الإكسسوارات) حتى لا يحدث تقطيع أثناء اللعب */
 try {

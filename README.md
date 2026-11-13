@@ -1,21 +1,20 @@
 # Bean World 🫘
 
-لعبة ثلاثية الأبعاد في المتصفح (three.js): لوبي، حسابات، خزانة، متجر، عالم مفتوح، وبيت بداخله تفاعل (جلوس ونوم).
+لعبة ثلاثية الأبعاد في المتصفح (three.js). الملف `index.html` هو اللعبة كاملة.
+للعرض: `index.html?fps` لإظهار عدّاد FPS.
 
-## التشغيل
-افتح `index.html` في المتصفح مباشرة، أو انشره كموقع (Vercel / GitHub Pages). يحتاج إنترنت لتحميل three.js وخط Cairo.
-لعرض FPS: أضف `?fps` للرابط.
 
-## النشر
-- **Vercel:** Add New → Project → اختر المستودع → Framework Preset: `Other` → Deploy (بدون Build Command).
-- **GitHub Pages:** Settings → Pages → Branch: `main` / root.
+## الأونلاين (لاعبون في نفس العالم)
 
-## الهيكل
-- `index.html` — اللعبة كاملة (الصفحة الرئيسية للموقع).
-- `source/` — الملفات الأصلية (الشخصية، الوجوه، الإكسسوارات، الحركات، البيت).
-- `index.original.html` — النسخة قبل إضافة البيت (يحتاجها `source/build_house.py`).
+اللاعبون اللي يضغطون «العب» يظهرون لبعض مباشرة (الاسم، اللون، الملامح، الإكسسوارات، الحركة، وحتى داخل البيت).
 
-## إعادة بناء البيت
-بعد تعديل `source/bean-house.js` أو `source/bean-dances.js`: `python3 source/build_house.py`
+**التفعيل (مرة وحدة، مجاني، بدون سيرفر):**
+1. أنشئ مشروع على https://supabase.com (الباقة المجانية).
+2. من Project Settings ← API Keys انسخ **Project URL** و **Publishable key** (أو anon key).
+3. في `index.html` املأ السطر:
+   `window.BW_ONLINE={url:"https://xxxx.supabase.co",key:"...",room:"bean-world"};`
+4. ارفع الموقع وافتحه من جهازين.
 
-الحسابات والعملات تُحفظ في `localStorage` على نفس الجهاز والمتصفح فقط.
+- غرفة خاصة لك ولربعك: افتح `?room=اسم_الغرفة` (مثال: `index.html?room=ahmed1`) وكل من يفتح نفس الرابط يدخل نفس الغرفة.
+- بدون ضبط الإعدادات: وضع تجريبي، يشتغل بين تبويبين في نفس المتصفح فقط.
+- الكود: `source/bean-online.js` (منسوخ داخل `index.html` قبل `applyLevel()`).
