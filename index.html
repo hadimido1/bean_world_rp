@@ -18,7 +18,7 @@ canvas{display:block;width:100%;height:100%;touch-action:none;cursor:grab}
 :root{--m:12px;--sl:env(safe-area-inset-left,0px);--sr:env(safe-area-inset-right,0px);--sT:env(safe-area-inset-top,0px);--sb:env(safe-area-inset-bottom,0px);--glass:rgba(12,17,42,.8);--line:rgba(255,255,255,.16);--acc:#ffd23f;--pk:#ff1080;--h:44px}
 #rot[hidden]{display:none}button{font-family:inherit}svg{display:block;flex:none}
 .scr{display:none}body.inauth #auth{display:grid}body.inlobby #lobby{display:block}body.insplash #splash{display:grid}
-body:not(.inworld) #hud,body:not(.inworld) #hint,body:not(.inworld) #joy,body:not(.inworld) #acts,body:not(.inworld) #menuBtn{display:none}
+body:not(.inworld) #plc,body:not(.inworld) #hud,body:not(.inworld) #hint,body:not(.inworld) #joy,body:not(.inworld) #acts,body:not(.inworld) #menuBtn{display:none}
 #fs{width:38px;height:34px}
 /* شاشة البداية */
 #splash{position:fixed;inset:0;z-index:7;place-items:center;align-content:center;gap:8px;text-align:center;direction:rtl;color:#fff;padding:var(--m);background:radial-gradient(circle at 50% 45%,rgba(255,16,128,.28),rgba(5,8,24,.9))}
@@ -203,9 +203,11 @@ body:not(.inworld) #cityUI{display:none}
 #cityPanel{display:none;align-items:center;gap:8px;padding:8px 10px;border-radius:14px;background:rgba(20,22,56,.72);color:#fff;font-size:13px;font-weight:700}
 #cityPanel select{background:rgba(255,255,255,.18);color:#fff;border:1px solid rgba(255,255,255,.35);border-radius:9px;padding:5px;font-size:13px}#cityPanel option{color:#000}
 #cityPanel input{width:110px}
+#plc{position:fixed;z-index:5;top:calc(var(--m,12px) + env(safe-area-inset-top,0px));left:calc(var(--m,12px) + env(safe-area-inset-left,0px));height:38px;display:flex;align-items:center;padding:0 14px;border-radius:12px;font-weight:800;font-size:13px;direction:rtl;color:#fff;background:rgba(12,17,42,.78);border:1px solid rgba(255,255,255,.16);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);pointer-events:none}
 </style>
 </head><body>
 <canvas id="v"></canvas><div id="aur"></div><div id="vig"></div><div id="veil" class="on"><i></i></div>
+<div id="plc">اللاعبون: 0</div>
 <div id="hud" class="chip"><small>الحركة</small><span id="st">Idle</span></div>
 <div id="hint" class="chip" dir="rtl">WASD للمشي · Shift للجري · Space للقفز · اسحب المشهد لتدوير الكاميرا</div>
 <div id="joy" aria-label="جويستك الحركة"><div id="jbase"><div id="knob"></div></div></div>
@@ -954,7 +956,7 @@ const City = (function () {
 scene.fog.near = 50; scene.fog.far = 160;
 const ground=new THREE.Mesh(new THREE.PlaneGeometry(4000,4000),new THREE.MeshLambertMaterial({color:0x86c27a}));
 ground.rotation.x=-Math.PI/2;ground.position.y=-.1;ground.receiveShadow=true;scene.add(ground);
-let W=0,D=0,pX=0,pZ=0,bpr=1,rows=1,curN=0,curMode=1,occ=new Set();
+let W=0,D=0,pX=0,pZ=0,bpr=1,rows=1,curN=0,curMode=1,occ=new Set(),nms={},occSig="";
 const box=new THREE.BoxGeometry(1,1,1);
 const rnd=(a,b)=>a+Math.random()*(b-a);
 function tex(sz,fn){const c=document.createElement('canvas');c.width=c.height=sz;const g=c.getContext('2d');fn(g,sz);const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.anisotropy=8;t.encoding=THREE.sRGBEncoding;return t}
@@ -971,7 +973,7 @@ const T={
  glass:tex(64,(g,s)=>{const gr=g.createLinearGradient(0,0,s,s);gr.addColorStop(0,'#cfeaff');gr.addColorStop(.5,'#5a9bd0');gr.addColorStop(1,'#2d5f8f');g.fillStyle=gr;g.fillRect(0,0,s,s);g.fillStyle='rgba(255,255,255,.35)';g.beginPath();g.moveTo(8,0);g.lineTo(26,0);g.lineTo(0,34);g.lineTo(0,18);g.fill();g.fillStyle='#fff';g.fillRect(s/2-2,0,4,s);g.fillRect(0,s/2-2,s,4)})
 };
 T.ground=T.grass.clone();T.ground.needsUpdate=true;T.ground.repeat.set(650,650);
-ground.material.map=T.ground;ground.material.color.set(0xffffff);
+ground.material.map=null;ground.material.color.set(0x3b3e43).convertSRGBToLinear();ground.material.needsUpdate=true; /* نفس لون الـ road */
 // water shader (animated ripples, caustics, sun glint, fresnel)
 const WU={t:{value:0},fc:{value:new THREE.Color(0xbfe3ff)}};
 const waterMat=new THREE.ShaderMaterial({uniforms:WU,
@@ -1109,6 +1111,13 @@ function mergeParts(list){
     return {geo,mat:o.flat?new THREE.MeshLambertMaterial({vertexColors:true,flatShading:true}):M(k)}});
 }
 const G0=mergeParts(P0),G1=mergeParts(P1),G2=mergeParts(P2);
+const lblC=new Map();
+function lblTex(n,on,nm){const k=n+'|'+(on?1:0)+'|'+nm;let t=lblC.get(k);if(t)return t;
+  const c=document.createElement('canvas');c.width=256;c.height=128;const g=c.getContext('2d');
+  g.fillStyle=on?'#ffd23f':'#ffffff';g.strokeStyle='#14233f';g.lineWidth=6;g.beginPath();g.rect(6,6,244,116);g.fill();g.stroke();
+  g.fillStyle='#14233f';g.textAlign='center';g.textBaseline='middle';g.font='900 '+(nm?60:78)+'px Cairo,system-ui,sans-serif';g.fillText(String(n),128,nm?44:66);
+  if(nm){g.font='700 30px Cairo,system-ui,sans-serif';g.fillText(nm.slice(0,12),128,98)}
+  t=new THREE.CanvasTexture(c);t.encoding=THREE.sRGBEncoding;t.anisotropy=4;lblC.set(k,t);return t}
 function build(N){
   if(city){scene.remove(city);city.traverse(o=>{if(o.material)o.material.dispose()})}
   city=new THREE.Group();
@@ -1141,6 +1150,9 @@ function build(N){
   });
   const H=new THREE.Matrix4();
   hs.forEach(h=>{H.compose(v.set(h[0],0,h[1]),q.setFromEuler(e.set(0,h[2]?Math.PI:0,0)),one);const ch=info[h[3]],vv=h[4];ch.m[vv].forEach(im=>im.setMatrixAt(ch.ix[vv],H));ch.ix[vv]++});
+  // أرقام البيوت (فوق باب كل بيت)
+  for(let i=0;i<N;i++){const sl=slotC(i),on=occ.has(i),sp=new THREE.Sprite(new THREE.SpriteMaterial({map:lblTex(i+1,on,on?(nms[i]||''):''),transparent:true,depthWrite:false}));
+    sp.scale.set(2.6,1.3,1);sp.position.set(sl.cx+sl.sg*DOOR[sl.ver][0],4.1,sl.cz+sl.sg*-.2);city.add(sp)}
   scene.add(city);
   ground.position.x=W/2;ground.position.z=D/2;
   
@@ -1193,7 +1205,7 @@ function slotC(i){const b=Math.floor(i/PER),w=i%PER,bxx=b%bpr,bz=Math.floor(b/bp
 const DOOR=[[-3,.6,-3,-3.2],[-1,.6,-1,-3.2]];
 function door(i){const s=slotC(i),d=DOOR[s.ver];return{x:s.cx+s.sg*d[0],z:s.cz+s.sg*d[1],ox:s.cx+s.sg*d[2],oz:s.cz+s.sg*d[3],sg:s.sg}}
 function nearDoor(p,r){let best=-1,bd=r*r;occ.forEach(i=>{const d=door(i),dd=(p.x-d.x)*(p.x-d.x)+(p.z-d.z)*(p.z-d.z);if(dd<bd){bd=dd;best=i}});return best}
-function setOcc(a){const n=Math.min(a.length,curN),k=a.slice(0,n).join();if(k===[...occ].join())return;occ=new Set(a.slice(0,n));build(curN)}
+function setOcc(a,nm){const k=a.filter(i=>i>=0&&i<curN).sort((x,y)=>x-y),sig=k.map(i=>i+":"+((nm&&nm[i])||"")).join();if(sig===occSig)return;occ=new Set(k);nms=nm||{};occSig=sig;build(curN)}
 build(100);
 return {cull,collide,clamp,setCfg,WU,setOcc,door,nearDoor,groundH};
 })();
@@ -1268,7 +1280,7 @@ $('shb').onclick=e=>{const t=e.target.closest('[data-s],[data-c],[data-e],[data-
 function save(){if(user)put(u=>{u.look=look})}
 document.querySelectorAll('#nav button').forEach(b=>b.onclick=()=>openTab(tab===b.dataset.t&&b.dataset.t!=='home'?'home':b.dataset.t));
 $('bProf').onclick=()=>openTab('user');$('sx').onclick=()=>openTab('home');
-function goLobby(){if(inHouse)setHouse(false,true);mode='lobby';document.body.className='inlobby';stageOn(true);player.position.set(500,.25,500);face_=Math.PI;yaw=Math.PI;applyLook();tag(U().name);refresh();openTab('home')}
+function goLobby(){if(inHouse)setHouse(false,true);Srv.leave();mode='lobby';document.body.className='inlobby';stageOn(true);player.position.set(500,.25,500);face_=Math.PI;yaw=Math.PI;applyLook();tag(U().name);refresh();openTab('home')}
 $('bOut').onclick=()=>veil(()=>{save();user=null;mode='auth';document.body.className='inauth';look={col:COL[0],expr:'happy',acc:[]};applyLook();tag('');sheetOn=false;authMode(false)});
 $('play').onclick=()=>veil(()=>{save();mode='world';document.body.className='inworld';stageOn(false);spawnHome();pitch=.38;dist=7.5;wfs();chkOri()});
 $('menuBtn').onclick=()=>veil(()=>goLobby());$('menuBtn').setAttribute('aria-label','اللوبي');
@@ -1648,27 +1660,75 @@ addEventListener('resize', () => { rs(); chkOri(); }); addEventListener('orienta
 const HI = { x: 1000, z: 1000 }, SUN0 = sun.intensity;
 /* سيرفر الغرفة: كل لاعب يدخل يُنشأ له بيت (تزامن بين التبويبات عبر BroadcastChannel؛ للسيرفر الحقيقي استبدل send/onmessage بـ WebSocket) */
 const Srv = (function () {
-  const id = Math.random().toString(36).slice(2, 9), t0 = Date.now(), peers = new Map(); let name = '', bc = null, onCh = () => {};
-  const list = () => { const a = [{ id, name, t: t0 }]; peers.forEach(p => a.push(p)); return a.sort((x, y) => x.t - y.t || (x.id < y.id ? -1 : 1)); };
-  const send = m => { try { bc && bc.postMessage(m); } catch (e) {} };
-  try {
-    bc = new BroadcastChannel('bean_world_srv');
-    bc.onmessage = e => {
-      const m = e.data; if (!m || m.id === id) return;
-      if (m.k === 'bye') { if (peers.delete(m.id)) onCh(); return; }
-      const had = peers.has(m.id); peers.set(m.id, { id: m.id, name: m.name, t: m.t, seen: Date.now() });
-      if (m.k === 'hi') send({ k: 'hb', id, name, t: t0 }); if (!had || m.k === 'hi') onCh();
-    };
-  } catch (e) {}
-  setInterval(() => { if (!name) return; send({ k: 'hb', id, name, t: t0 }); let ch = false; peers.forEach((p, k) => { if (Date.now() - p.seen > 7000) { peers.delete(k); ch = true; } }); if (ch) onCh(); }, 2000);
-  addEventListener('pagehide', () => send({ k: 'bye', id }));
-  return { id, list, slotOf: pid => list().findIndex(p => p.id === pid), join(n) { name = n || 'لاعب'; send({ k: 'hi', id, name, t: t0 }); onCh(); }, onChange(f) { onCh = f; } };
+  const id = Math.random().toString(36).slice(2, 9), t0 = Date.now(), peers = new Map(), cfg = window.BW_ONLINE || {};
+  let name = '', joined = false, mySlot = -1, bc = null, sb = null, chn = null, chUp = false, onCh = () => {}, lastSig = '', cache = [], room = 'bean-world';
+  try { room = String(new URLSearchParams(location.search).get('room') || cfg.room || 'bean-world').replace(/[^\w-]/g, '').slice(0, 40) || 'bean-world'; } catch (e) {}
+  const send = m => {
+    try { bc && bc.postMessage(m); } catch (e) {}
+    try { chUp && chn && chn.send({ type: 'broadcast', event: 'm', payload: m }); } catch (e) {}
+  };
+  const hb = k => send({ k: k || 'hb', id, name, t: t0, s: mySlot });
+  /* ترتيب ثابت: الأقدم دخولاً ياخذ أول رقم متاح، ومن يدخل بعده ياخذ الرقم اللي يليه. الخروج لا يزحزح بيوت الباقين. */
+  function recompute() {
+    const a = []; if (joined) a.push({ id, name, t: t0, s: mySlot }); peers.forEach(p => a.push(p));
+    a.sort((x, y) => x.t - y.t || (x.id < y.id ? -1 : 1));
+    const taken = new Set(), got = new Map();
+    a.forEach(p => { if (Number.isInteger(p.s) && p.s >= 0 && !taken.has(p.s)) { taken.add(p.s); got.set(p.id, p.s); } });
+    a.forEach(p => { if (!got.has(p.id)) { let k = 0; while (taken.has(k)) k++; taken.add(k); got.set(p.id, k); } });
+    cache = a.map(p => ({ id: p.id, name: p.name, t: p.t, slot: got.get(p.id) })).sort((x, y) => x.slot - y.slot);
+    mySlot = joined ? got.get(id) : -1;
+  }
+  function changed() {
+    const before = mySlot; recompute();
+    const sg = cache.map(p => p.id + ':' + p.slot).join();
+    if (joined && mySlot !== before) hb();
+    if (sg !== lastSig) { lastSig = sg; onCh(); }
+  }
+  function onMsg(m) {
+    if (!m || typeof m !== 'object' || typeof m.id !== 'string' || m.id === id) return;
+    if (m.k === 'bye') { if (peers.delete(m.id)) changed(); return; }
+    if (m.k !== 'hi' && m.k !== 'hb') return;
+    peers.set(m.id, { id: m.id, name: String(m.name || 'لاعب').slice(0, 16), t: +m.t || 0, s: Number.isInteger(m.s) ? m.s : -1, seen: Date.now() });
+    if (joined && m.k === 'hi') hb();
+    changed();
+  }
+  try { bc = new BroadcastChannel('bean_world_srv-' + room); bc.onmessage = e => onMsg(e.data); } catch (e) {}
+  /* سيرفر حقيقي بين الأجهزة (اختياري): يشتغل لو ضبطت window.BW_ONLINE = {url, key, room} */
+  if (cfg.url && cfg.key) {
+    const go = () => { try {
+      sb = window.supabase.createClient(cfg.url, cfg.key, { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false } });
+      chn = sb.channel('bw-srv-' + room, { config: { broadcast: { self: false, ack: false } } });
+      chn.on('broadcast', { event: 'm' }, e => { if (e && e.payload) onMsg(e.payload); });
+      chn.subscribe(st => { chUp = st === 'SUBSCRIBED'; if (chUp && joined) hb('hi'); });
+    } catch (e) {} };
+    if (window.supabase && window.supabase.createClient) go();
+    else { const sc = document.createElement('script'); sc.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.109.0/dist/umd/supabase.js'; sc.onload = go; document.head.appendChild(sc); }
+  }
+  setInterval(() => {
+    if (joined) hb();
+    let ch = false; peers.forEach((p, k) => { if (Date.now() - p.seen > 15000) { peers.delete(k); ch = true; } });
+    if (ch) changed();
+  }, 2000);
+  addEventListener('pagehide', () => { if (joined) send({ k: 'bye', id }); });
+  return {
+    id, list: () => cache, count: () => cache.length, slotOf: pid => { const p = cache.find(x => x.id === pid); return p ? p.slot : -1; },
+    bySlot: s => cache.find(p => p.slot === s) || null, slots: () => cache.map(p => p.slot),
+    names: () => { const o = {}; cache.forEach(p => { o[p.slot] = p.name; }); return o; },
+    join(n) { name = n || 'لاعب'; joined = true; changed(); hb('hi'); },
+    leave() { if (!joined) return; send({ k: 'bye', id }); joined = false; mySlot = -1; changed(); },
+    onChange(f) { onCh = f; }
+  };
 })();
-Srv.onChange(() => City.setOcc(Srv.list().map((_, i) => i)));
+const plcEl = $('plc'); let spawnLock = 0;
+function updPlc() { if (plcEl) plcEl.textContent = 'اللاعبون في السيرفر: ' + Srv.count(); }
+function placeHome() { const i = Math.max(0, Srv.slotOf(Srv.id)), d = City.door(i), f = d.sg < 0 ? 0 : Math.PI; curHouse = i; player.position.set(d.ox, 0, d.oz); face_ = f; yaw = f; snap = true; }
+Srv.onChange(() => {
+  City.setOcc(Srv.slots(), Srv.names()); updPlc();
+  if (mode === 'world' && !inHouse && performance.now() < spawnLock && Srv.slotOf(Srv.id) >= 0 && Srv.slotOf(Srv.id) !== curHouse) placeHome();   // لو وصلت ردود اللاعبين متأخرة بعد الدخول مباشرة
+});
 let nearHouse = -1, curHouse = 0;
 function spawnHome() {
-  Srv.join(U() && U().name); const i = Math.max(0, Srv.slotOf(Srv.id)), d = City.door(i), f = d.sg < 0 ? 0 : Math.PI;
-  curHouse = i; player.position.set(d.ox, 0, d.oz); face_ = f; yaw = f;
+  Srv.join(U() && U().name); spawnLock = performance.now() + 3000; updPlc(); placeHome();
 }
 const hInt = BeanHouse.interior({ THREE, scene, bake, vcMat, ix: HI.x, iz: HI.z });
 hInt.group.visible = false; scene.add(hInt.group);
@@ -1678,7 +1738,7 @@ function setHouse(on, silent) {
   if (seat) { seat = null; if (act === NAMES.sit || act === NAMES.sleep) act = null; sitHold = false; } pos.y = 0;
   inHouse = on; hInt.group.visible = on; hInt.showAllWalls();
   if (on) { pos.set(HI.x + hInt.spawn.x, 0, HI.z + hInt.spawn.z); face_ = Math.PI; yaw = 0; pitch = .3; dist = 4.6; }
-  else { curHouse = Math.min(curHouse, Math.max(0, Srv.list().length - 1)); const d = City.door(curHouse), f = d.sg < 0 ? 0 : Math.PI; pos.set(d.ox, 0, d.oz); face_ = f; yaw = f; pitch = .38; dist = 7.5; }
+  else { curHouse = Math.max(0, curHouse); const d = City.door(curHouse), f = d.sg < 0 ? 0 : Math.PI; pos.set(d.ox, 0, d.oz); face_ = f; yaw = f; pitch = .38; dist = 7.5; }
   intro = 0; snap = true; vy = 0; grounded = true; speed = 0;
   amb.visible = !on && QLV[QL].amb > 0; sun.intensity = on ? .6 : SUN0;
   if (!silent) enterShown = false;
@@ -1721,7 +1781,7 @@ function seatTick(dt) {
 function houseTick(dt) {
   let show = false, lbl = '', kind = '', spot = null;
   if (mode === 'world' && !entering && !veilBusy) {
-    if (!inHouse) { const s = City.nearDoor(pos, 2.8); nearHouse = s; if (s >= 0) { const o = Srv.list()[s]; show = true; lbl = !o || o.id === Srv.id ? 'دخول بيتي' : 'دخول بيت ' + o.name; kind = 'enter'; } }
+    if (!inHouse) { const s = City.nearDoor(pos, 2.8); nearHouse = s; if (s >= 0) { const o = Srv.bySlot(s); show = true; lbl = !o || o.id === Srv.id ? 'دخول بيتي (رقم ' + (s + 1) + ')' : 'دخول بيت ' + o.name + ' (رقم ' + (s + 1) + ')'; kind = 'enter'; } }
     else if (seat) { if (!seat.leaving) { show = true; kind = 'unseat'; lbl = seat.spot.kind === 'sleep' ? 'استيقاظ' : 'قيام'; } }
     else if (Math.hypot(pos.x - (HI.x + hInt.exit.x), pos.z - (HI.z + hInt.exit.z)) < hInt.exit.r) { show = true; lbl = 'خروج'; kind = 'exit'; }
     else if (!act || act === NAMES.wave) {
