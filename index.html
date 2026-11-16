@@ -1224,7 +1224,8 @@ const player = new THREE.Group(); mesh.scale.setScalar(.75); mesh.castShadow = t
 const face = BeanFace.attach(THREE, mesh.material, QLV[QL].face); let col = COL[0]; face.set(col, 'happy');
 BeanFace.loadAtlas(ATLAS);
 
-document.getElementById('startBtn').onclick=()=>{veil(()=>{document.body.className='inauth'});try{wfs()}catch(e){}try{screen.orientation.lock('landscape').catch(()=>{})}catch(e){}};
+document.getElementById('startBtn').onclick=()=>{let sv=null;try{sv=localStorage.getItem('bw_sess')}catch(e){}
+ if(sv&&DB.get()[sv]){user=sv;look=Object.assign({col:COL[0],expr:'happy',acc:[]},U().look);veil(()=>{goLobby()})}else veil(()=>{document.body.className='inauth'});try{wfs()}catch(e){}try{screen.orientation.lock('landscape').catch(()=>{})}catch(e){}};
 addEventListener('error',e=>{const t=document.getElementById('toast');if(t){t.textContent='خطأ: '+e.message;t.style.display='block'}});
 
 const sk=mesh.skeleton.bones,acc=BeanAcc.create(THREE,sk.find(b=>b.name==='Head'),sk.find(b=>b.name==='Chest'));
@@ -1283,7 +1284,7 @@ function save(){if(user)put(u=>{u.look=look})}
 document.querySelectorAll('#nav button').forEach(b=>b.onclick=()=>openTab(tab===b.dataset.t&&b.dataset.t!=='home'?'home':b.dataset.t));
 $('bProf').onclick=()=>openTab('user');$('sx').onclick=()=>openTab('home');
 function goLobby(){if(inHouse)setHouse(false,true);Srv.leave();mode='lobby';document.body.className='inlobby';stageOn(true);player.position.set(500,.25,500);face_=Math.PI;yaw=Math.PI;applyLook();tag(U().name);refresh();openTab('home')}
-$('bOut').onclick=()=>veil(()=>{save();user=null;mode='auth';document.body.className='inauth';look={col:COL[0],expr:'happy',acc:[]};applyLook();tag('');sheetOn=false;authMode(false)});
+$('bOut').onclick=()=>veil(()=>{save();user=null;try{localStorage.removeItem('bw_sess')}catch(e){}mode='auth';document.body.className='inauth';look={col:COL[0],expr:'happy',acc:[]};applyLook();tag('');sheetOn=false;authMode(false)});
 $('play').onclick=()=>veil(()=>{save();mode='world';document.body.className='inworld';stageOn(false);spawnHome();pitch=.38;dist=7.5;wfs();chkOri()});
 $('menuBtn').onclick=()=>veil(()=>goLobby());$('menuBtn').setAttribute('aria-label','اللوبي');
 setInterval(()=>{if(mode==='world'&&user)put(u=>{u.secs+=10;u.coins+=3})},10000);
@@ -1296,7 +1297,7 @@ $('go').onclick=async()=>{const n=$('un').value.trim(),p=$('pw').value,k=n.toLow
  if(isReg){if(D[k])return msg.textContent='هذا الاسم مستخدم، اختر اسماً آخر';if(p!==$('pw2').value)return msg.textContent='كلمتا السر غير متطابقتين';
   const salt=Math.random().toString(36).slice(2);D[k]={name:n,salt,hash:await H(salt+p)};DB.set(D)}
  else{const u=D[k];if(!u||u.hash!==await H(u.salt+p))return msg.textContent='اسم المستخدم أو كلمة السر غير صحيحة'}
- user=k;put(u=>{u.coins??=500;u.secs??=0;u.created??=Date.now();u.owned??=ITEMS.filter(i=>!i.p).map(i=>i.k);u.look??={col:COL[0],expr:'happy',acc:[]}});
+ user=k;try{localStorage.setItem('bw_sess',k)}catch(e){}put(u=>{u.coins??=500;u.secs??=0;u.created??=Date.now();u.owned??=ITEMS.filter(i=>!i.p).map(i=>i.k);u.look??={col:COL[0],expr:'happy',acc:[]}});
  look=Object.assign({col:COL[0],expr:'happy',acc:[]},U().look);$('pw').value=$('pw2').value='';msg.textContent='';wfs();veil(()=>{goLobby();setTimeout(()=>startAct('wave'),600)})};
 /* تدوير الشخصية بالسحب */
 let lx=null;cv.addEventListener('pointerdown',e=>{lx=e.clientX});addEventListener('pointerup',()=>{lx=null});
