@@ -198,12 +198,6 @@ html[data-q="3"] #startBtn,html[data-q="3"] body.inlobby #play{animation:none}
 body.inworld #enterBtn.on{display:flex}
 #enterBtn:active{animation:none;transform:translateX(-50%) skewX(-8deg) translateY(4px);box-shadow:0 1px 0 #c99a14}
 @keyframes ebob{to{transform:translateX(-50%) skewX(-8deg) translateY(-4px)}}
-#cityUI{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 10px);z-index:9;display:flex;flex-direction:column;align-items:center;gap:6px;direction:rtl}
-body:not(.inworld) #cityUI{display:none}
-#cityBtn{width:42px;height:42px;border-radius:14px;border:1px solid rgba(255,255,255,.3);background:rgba(20,22,56,.6);color:#fff;font-size:20px;cursor:pointer}
-#cityPanel{display:none;align-items:center;gap:8px;padding:8px 10px;border-radius:14px;background:rgba(20,22,56,.72);color:#fff;font-size:13px;font-weight:700}
-#cityPanel select{background:rgba(255,255,255,.18);color:#fff;border:1px solid rgba(255,255,255,.35);border-radius:9px;padding:5px;font-size:13px}#cityPanel option{color:#000}
-#cityPanel input{width:110px}
 #onl{position:fixed;z-index:5;top:calc(var(--m,12px) + env(safe-area-inset-top,0px) + 44px);left:calc(var(--m,12px) + env(safe-area-inset-left,0px));height:30px;display:none;align-items:center;padding:0 12px;border-radius:10px;font-weight:800;font-size:12px;direction:rtl;color:#fff;background:rgba(12,17,42,.78);border:1px solid rgba(255,255,255,.16);pointer-events:none}#onl.on{display:flex}body:not(.inworld) #onl{display:none}
 #plc{position:fixed;z-index:5;top:calc(var(--m,12px) + env(safe-area-inset-top,0px));left:calc(var(--m,12px) + env(safe-area-inset-left,0px));height:38px;display:flex;align-items:center;padding:0 14px;border-radius:12px;font-weight:800;font-size:13px;direction:rtl;color:#fff;background:rgba(12,17,42,.78);border:1px solid rgba(255,255,255,.16);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);pointer-events:none}
 </style>
@@ -228,7 +222,6 @@ body:not(.inworld) #cityUI{display:none}
 <button id="play"></button></div>
 <button id="enterBtn" aria-label="دخول"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4a1 1 0 011-1h9l4 2v16M3 21h18M12 12v.01"/></svg><span id="enterTx">دخول البيت</span></button><div id="err" hidden>تعذّر تحميل three.js — تأكد من الاتصال بالإنترنت ثم أعد فتح الصفحة</div>
 <div id="rot"><div><p id="rotmsg">للعب، يجب تشغيل ملء الشاشة</p><button id="rotgo">ملء الشاشة</button></div></div>
-<div id="cityUI"><div id="cityPanel"><select id="cityLv"><option value="0">🏠 بيت 1</option><option value="1" selected>🏡 بيت 2</option><option value="2">🏘 مختلط</option></select><span>بيوت: <b id="cityCnt">100</b></span><input id="cityN" type="range" min="100" max="1000" step="50" value="100"></div><button id="cityBtn" type="button">🏙</button></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
 /* bean-face.js — وجه البين (عيون + فم) ولون الجسم يُرسمان بالكود على canvas. بدون صور. */
@@ -958,7 +951,7 @@ const City = (function () {
 scene.fog.near = 50; scene.fog.far = 160;
 const ground=new THREE.Mesh(new THREE.PlaneGeometry(4000,4000),new THREE.MeshLambertMaterial({color:0x86c27a}));
 ground.rotation.x=-Math.PI/2;ground.position.y=-.1;ground.receiveShadow=true;scene.add(ground);
-let W=0,D=0,pX=0,pZ=0,bpr=1,rows=1,curN=0,curMode=1,occ=new Set(),nms={},occSig="";
+let W=0,D=0,pX=0,pZ=0,bpr=1,rows=1,curN=0,curMode=0,occ=new Set(),nms={},occSig="";
 const box=new THREE.BoxGeometry(1,1,1);
 const rnd=(a,b)=>a+Math.random()*(b-a);
 function tex(sz,fn){const c=document.createElement('canvas');c.width=c.height=sz;const g=c.getContext('2d');fn(g,sz);const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.anisotropy=8;t.encoding=THREE.sRGBEncoding;return t}
@@ -1211,10 +1204,8 @@ function setOcc(a,nm){const k=a.filter(i=>i>=0&&i<curN).sort((x,y)=>x-y),sig=k.m
 build(100);
 return {cull,collide,clamp,setCfg,WU,setOcc,door,nearDoor,groundH};
 })();
-(function(){const ui=$('cityUI'),pn=$('cityPanel'),n=$('cityN'),c=$('cityCnt'),lv=$('cityLv');
- ['pointerdown','pointermove','pointerup','touchstart','touchmove','touchend','click'].forEach(t=>ui.addEventListener(t,e=>e.stopPropagation(),{passive:true}));
- $('cityBtn').onclick=()=>{pn.style.display=pn.style.display==='flex'?'none':'flex'};
- n.oninput=()=>c.textContent=n.value;n.onchange=()=>City.setCfg(+n.value,+lv.value);lv.onchange=n.onchange;})();
+/* ترقية البيت: يبدأ اللاعب ببيت 1، وبعد دقيقة لعب يتطور بيته للمستوى 2 */
+(function(){let t=0,done=false;const iv=setInterval(()=>{if(done||mode!=='world')return;if(++t>=60){done=true;clearInterval(iv);City.setCfg(100,1);toast('🎉 إن شاء الله بيتك تطور للمستوى 2!');clearTimeout(toast.h);toast.h=setTimeout(()=>$('toast').style.display='none',5000)}},1000)})();
 
 /* الشخصية */
 const { mesh, clips } = loadGLB(Uint8Array.from(atob(GLB), c => c.charCodeAt(0)).buffer);
